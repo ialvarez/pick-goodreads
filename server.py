@@ -1,4 +1,4 @@
-from flask import Flask, url_for, redirect
+from flask import Flask, url_for, redirect, request, make_response
 from rauth.service import OAuth1Service
 
 KEY = 'LBSo8qxEflIrs8SRenUTQ'
@@ -23,7 +23,12 @@ goodreads = OAuth1Service(
 
 @app.route('/')
 def homepage():
-    return redirect(url_for('login'))
+    oauth_token = request.cookies.get('oauth_token')
+    print oauth_token
+    if oauth_token:
+        return 'Already logged in'
+    else:
+        return redirect(url_for('login'))
 
 
 @app.route('/login')
@@ -36,7 +41,9 @@ def login():
 
 @app.route('/oauth_authorized')
 def oauth_authorized():
-    return 'Success'
+    resp = make_response('This is a test response. <a href="/">Go home</a>')
+    resp.set_cookie('oauth_token', request.args.get('oauth_token'))
+    return resp
 
 
 if __name__ == '__main__':
