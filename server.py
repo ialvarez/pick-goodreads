@@ -23,28 +23,24 @@ goodreads = OAuth1Service(
 
 @app.route('/')
 def homepage():
-    oauth_token = request.cookies.get('oauth_token')
-    print oauth_token
-    if oauth_token:
-        return 'Already logged in'
-    else:
-        return redirect(url_for('login'))
+    return redirect(url_for('login'))
 
 
 @app.route('/login')
 def login():
-    # callback = url_for('goodreads_authorized', _external=True)
-    # return goodreads.authorize(callback=callback, state=uuid.uuid4())
-    request_token, _ = goodreads.get_request_token(header_auth=True)
-    return '<a href="%s">Link</a>' % goodreads.get_authorize_url(request_token)
+    token, secret = goodreads.get_request_token(header_auth=True)
+    resp = make_response(redirect(goodreads.get_authorize_url(token)))
+    resp.set_cookie('token', token)
+    resp.set_cookie('secret', secret)
+    return resp
 
 
 @app.route('/oauth_authorized')
 def oauth_authorized():
-    resp = make_response('This is a test response. <a href="/">Go home</a>')
-    resp.set_cookie('oauth_token', request.args.get('oauth_token'))
-    return resp
+    token, secret = request.cookies.get('token'), request.cookies.get('secret')
+    gsession = goodreads.get_auth_session(token, secret)
+    return gsession.get('%sapi/auth_user' % goodreads.base_url).text
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(port=65011)
