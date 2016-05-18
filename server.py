@@ -80,12 +80,12 @@ def shelf():
 
     review = choice(data['reviews']['review'])
     context = {
-        'url': review['book'],
+        'url': review['book']['link'],
         'title': review['book']['title'],
         'authors': review['book']['authors']['author']['name'],
         'description': review['book']['description'],
         'img': review['book']['image_url'],
-        'reviews_count': review['book']['text_reviews_count']['#text'],
+        'ratings_count': review['book']['ratings_count'],
         'rating': review['book']['average_rating'],
     }
 
