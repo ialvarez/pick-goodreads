@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1><a href='{{ url }}' target='_blank'>{{ title }}</a></h1>
+<h2>{{ authors|safe }}</h2>
+<img src="{{ img }}" />
+<ul>
+    <li>Reviews count: {{ reviews_count }}</li>
+    <li>Rating: {{ rating }}</li>
+</ul>
+<p>{{ description|safe }}</p>
+
+<a href="/shelf">Show a new one</a>
+
+{% endblock %}

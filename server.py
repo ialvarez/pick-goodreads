@@ -1,9 +1,10 @@
-from flask import Flask, url_for, redirect, make_response, request, render_template
+from __future__ import division
+from math import ceil
+from flask import Flask, redirect, make_response, request, render_template
 from rauth.service import OAuth1Service, OAuth1Session
 from xml.parsers.expat import ExpatError
 from random import choice
 import xmltodict
-import json
 
 KEY = 'LBSo8qxEflIrs8SRenUTQ'
 SECRET = 'bX1mw68KW9Bcx4hiO0o1bQWZS8alX14tVRKEOKUiDTI'
@@ -52,29 +53,44 @@ def homepage():
         user = 'Anonymous'
     else:
         user = me['user']['name']
-    return render_template('home.html', user=me['user']['name'])
+    return render_template('home.html', user=user)
 
 
 @app.route('/shelf')
 def shelf():
     me = get('api/auth_user')
+    sort_options = ['title', 'author', 'cover', 'rating', 'year_pub',
+                    'date_pub', 'date_pub_edition', 'date_started', 'date_read',
+                    'date_updated', 'date_added', 'recommender', 'avg_rating',
+                    'num_ratings', 'review', 'read_count', 'votes', 'random',
+                    'comments', 'notes', 'isbn', 'isbn13', 'asin', 'num_pages',
+                    'format', 'position', 'shelves', 'owned', 'date_purchased',
+                    'purchase_location', 'condition']
+    per_page = 10
+    page = 1
+    random_sort = choice(sort_options)
     data = get('review/list/%s.xml' % me['user']['@id'], params={
-            'v':2,
-            'shelf': 'to-read',
-        })
-    review = choice(data['reviews']['review'])
-    print review['id']
-    print review['book']['id']['#text']
-    print review['book']['text_reviews_count']['#text']
-    print review['book']['title']
-    print review['book']['large_image_url']
-    print review['book']['small_image_url']
-    print review['book']['image_url']
-    print review['book']['average_rating']
-    print review['url']
-    print '\n'
+        'v': 2,
+        'shelf': 'to-read',
+        'per_page': per_page,
+        'page': page,
+        'sort': random_sort,
+    })
+    pages = int(ceil(int(data['reviews']['@total']) / per_page))
 
-    return 'ok'
+    review = choice(data['reviews']['review'])
+    context = {
+        'url': review['book'],
+        'title': review['book']['title'],
+        'authors': review['book']['authors']['author']['name'],
+        'description': review['book']['description'],
+        'img': review['book']['image_url'],
+        'reviews_count': review['book']['text_reviews_count']['#text'],
+        'rating': review['book']['average_rating'],
+    }
+
+    return render_template('book.html', **context)
+
 
 @app.route('/login')
 def login():
@@ -97,4 +113,4 @@ def oauth_authorized():
 
 
 if __name__ == "__main__":
-    app.run(port=65011)
+   app.run(port=65011)
