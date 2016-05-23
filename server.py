@@ -1,10 +1,10 @@
 from __future__ import division
-from math import ceil
-from flask import Flask, redirect, make_response, request, render_template
+from flask import Flask, redirect, make_response, request, render_template, \
+                  url_for
+from random import choice, randint
 from rauth.service import OAuth1Service, OAuth1Session
-from xml.parsers.expat import ExpatError
-from random import choice
 import xmltodict
+from xml.parsers.expat import ExpatError
 
 KEY = 'LBSo8qxEflIrs8SRenUTQ'
 SECRET = 'bX1mw68KW9Bcx4hiO0o1bQWZS8alX14tVRKEOKUiDTI'
@@ -26,48 +26,26 @@ goodreads = OAuth1Service(
     base_url='http://www.goodreads.com/'
 )
 
+cookie_keys = ['token', 'secret', 'request_token', 'request_secret']
 
-def get(path, params=None):
-    session = OAuth1Session(
-                consumer_key=KEY,
-                consumer_secret=SECRET,
-                access_token=request.cookies.get('access_token'),
-                access_token_secret=request.cookies.get('access_token_secret'))
-
-    if not params:
-        params = {}
-
-    base = "http://www.goodreads.com/"
-    resp = session.get(base + path, params=params)
-
-    try:
-        return xmltodict.parse(resp.content)['GoodreadsResponse']
-    except ExpatError:
-        return 500
+sort_options = ['title', 'author', 'cover', 'rating', 'year_pub', 'date_pub',
+                'date_pub_edition', 'date_started', 'date_read', 'date_updated',
+                'date_added', 'recommender', 'avg_rating', 'num_ratings',
+                'review', 'read_count', 'votes', 'random', 'comments', 'notes',
+                'isbn', 'isbn13', 'asin', 'num_pages', 'format', 'position',
+                'shelves', 'owned', 'date_purchased', 'purchase_location',
+                'condition']
 
 
-@app.route('/')
-def homepage():
-    me = get('api/auth_user')
-    if me == 500:
-        user = 'Anonymous'
-    else:
-        user = me['user']['name']
-    return render_template('home.html', user=user)
+def get_cookie(key):
+    if key not in cookie_keys:
+        return None
+    return request.cookies.get(key)
 
 
-@app.route('/shelf')
-def shelf():
-    me = get('api/auth_user')
-    sort_options = ['title', 'author', 'cover', 'rating', 'year_pub',
-                    'date_pub', 'date_pub_edition', 'date_started', 'date_read',
-                    'date_updated', 'date_added', 'recommender', 'avg_rating',
-                    'num_ratings', 'review', 'read_count', 'votes', 'random',
-                    'comments', 'notes', 'isbn', 'isbn13', 'asin', 'num_pages',
-                    'format', 'position', 'shelves', 'owned', 'date_purchased',
-                    'purchase_location', 'condition']
-    per_page = 10
-    page = 1
+def random_review(me):
+    per_page = randint(10, 20)
+    page = randint(1, 2)
     random_sort = choice(sort_options)
     data = get('review/list/%s.xml' % me['user']['@id'], params={
         'v': 2,
@@ -76,10 +54,40 @@ def shelf():
         'page': page,
         'sort': random_sort,
     })
-    pages = int(ceil(int(data['reviews']['@total']) / per_page))
+    return choice(data['reviews']['review'])
 
-    review = choice(data['reviews']['review'])
-    context = {
+
+def get(path, params={}):
+    session = OAuth1Session(consumer_key=KEY,
+                            consumer_secret=SECRET,
+                            access_token=get_cookie('token'),
+                            access_token_secret=get_cookie('secret'))
+
+    base = "http://www.goodreads.com/"
+    resp = session.get(base + path, params=params)
+
+    try:
+        return xmltodict.parse(resp.content)['GoodreadsResponse']
+    except ExpatError:
+        return None
+
+
+@app.route('/')
+def homepage():
+    me = get('api/auth_user')
+    user = me['user']['name'] if me else 'Anonymous'
+    return render_template('home.html', user=user)
+
+
+@app.route('/shelf')
+def shelf():
+    me = get('api/auth_user')
+
+    if not me:
+        return redirect(url_for('login'))
+
+    review = random_review(me)
+    return render_template('book.html', **{
         'url': review['book']['link'],
         'title': review['book']['title'],
         'authors': review['book']['authors']['author']['name'],
@@ -87,9 +95,7 @@ def shelf():
         'img': review['book']['image_url'],
         'ratings_count': review['book']['ratings_count'],
         'rating': review['book']['average_rating'],
-    }
-
-    return render_template('book.html', **context)
+    })
 
 
 @app.route('/login')
@@ -103,14 +109,13 @@ def login():
 
 @app.route('/oauth_authorized')
 def oauth_authorized():
-    request_token = request.cookies.get('request_token')
-    request_secret = request.cookies.get('request_secret')
-    session = goodreads.get_auth_session(request_token, request_secret)
+    session = goodreads.get_auth_session(get_cookie('request_token'),
+                                         get_cookie('request_secret'))
     resp = make_response(redirect('/'))
-    resp.set_cookie('access_token', session.access_token)
-    resp.set_cookie('access_token_secret', session.access_token_secret)
+    resp.set_cookie('token', session.access_token)
+    resp.set_cookie('secret', session.access_token_secret)
     return resp
 
 
 if __name__ == "__main__":
-   app.run(port=65011)
+    app.run(port=65011)
