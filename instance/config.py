@@ -1,0 +1,3 @@
+KEY = 'LBSo8qxEflIrs8SRenUTQ'
+SECRET = 'bX1mw68KW9Bcx4hiO0o1bQWZS8alX14tVRKEOKUiDTI'
+SECRET_KEY = 'development key'

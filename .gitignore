@@ -63,3 +63,4 @@ target/
 
 # Virtual Environment
 pick-goodreads
+.ropeproject/
