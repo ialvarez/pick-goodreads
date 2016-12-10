@@ -5,7 +5,7 @@ from instance.config import SECRET_KEY
 
 app = Flask(__name__)
 app.debug = DEBUG
-app.secret_key = SECRET_KEY,
+app.secret_key = SECRET_KEY
 app.register_blueprint(goodreads_app)
 
 if __name__ == "__main__":

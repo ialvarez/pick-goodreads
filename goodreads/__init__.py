@@ -5,29 +5,18 @@ from random import randint
 from random import choice
 
 from rauth.service import OAuth1Service
+from rauth.service import OAuth1Session
 
 from xmltodict import parse
 from xml.parsers.expat import ExpatError
 
 
 class Goodreads(object):
-    def __init__(self):
+    def __init__(self, token=None, secret=None):
         self._service = None
-        self._service_token = None
-        self._service_secret = None
         self._session = None
-
-    @property
-    def service_token(self):
-        if not self._service_token:
-            self._init_service_token_secret()
-        return self._service_token
-
-    @property
-    def service_secret(self):
-        if not self._service_secret:
-            self._init_service_token_secret()
-        return self._service_secret
+        self.token = token
+        self.secret = secret
 
     @property
     def service(self):
@@ -44,20 +33,33 @@ class Goodreads(object):
 
     @property
     def session(self):
-        if not self._session:
-            self._session = self.service.get_auth_session(self.service_token,
-                                                          self.service_secret)
+        if not self._session and self.token and self.secret:
+            self._session = OAuth1Session(
+                consumer_key=KEY,
+                consumer_secret=SECRET,
+                access_token=self.token,
+                access_token_secret=self.secret
+            )
+
         return self._session
 
-    def _init_service_token_secret(self):
+    def login(self):
         params = {'header_auth': True}
-        self._service_token, self._service_secret = self.service.get_request_token(**params)
+        token, secret = self.service.get_request_token(**params)
+        url = self.service.get_authorize_url(token)
+        return token, secret, url
+
+    def auth(self, token, secret):
+        session = self.service.get_auth_session(token, secret)
+        return session.access_token, session.access_token_secret
 
     def get(self, path, params={}):
         base = "http://www.goodreads.com/"
         try:
             resp = self.session.get(base + path, params=params)
             return parse(resp.content)['GoodreadsResponse']
+        except AttributeError:
+            return None
         except KeyError:
             return None
         except ExpatError:
