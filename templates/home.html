@@ -1,4 +1,38 @@
-{% extends "layout.html" %}
-{% block body %}
-<h1>Hello {{ user }}!</h1>
+{% extends "bootstrap/base.html" %}
+{% block title %}Pick Goodreads!{% endblock %}
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="/static/style.css">
+{% endblock %}
+
+{% block navbar %}
+<nav class="navbar navbar-default">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" 
+                data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" 
+                aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Pick Goodreads!</a>
+        </div>
+        
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+                <li><a href="/shelf">Random Book</a></li>
+            </ul>
+        </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+  <h1>Hello {{ user }}!</h1>
+  <p>This is a test. Please do not read it. Seriously.</p>
+  <p><a class="btn btn-primary btn-lg" href="#" role="button">Learn more</a></p>
+</div>
 {% endblock %}

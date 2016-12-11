@@ -16,29 +16,28 @@ def goodreads():
         token = session['token']
     if 'secret' in session:
         secret = session['secret']
-
     return Goodreads(token=token, secret=secret)
+
 
 @app.route('/')
 def index():
-    print('/')
-    me = goodreads().get('api/auth_user')
+    me = goodreads().me
     user = me['user']['name'] if me else 'Anonymous'
     return render_template('home.html', user=user)
 
 
 @app.route('/login')
 def login():
-    print('/login')
     session['login_token'], session['login_secret'], url = goodreads().login()
     return redirect(url)
 
 
 @app.route('/oauth_authorized')
 def oauth_authorized():
-    print('/oauth_authorized')
-    session['token'], session['secret'] = goodreads().auth(session['login_token'],
-                                                           session['login_secret'])
+    session['token'], session['secret'] = goodreads().auth(
+        session['login_token'],
+        session['login_secret']
+    )
     return redirect('/')
 
 

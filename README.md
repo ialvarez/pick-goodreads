@@ -5,4 +5,5 @@
 - Flask
 - rauth
 - xmltodict
+- flask-bootstrap
 
